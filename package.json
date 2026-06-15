@@ -1,6 +1,6 @@
 {
   "name": "sotobot",
-  "version": "0.2.0",
+  "version": "0.0.0-dev",
   "description": "A serverless-focused GitHub bot framework.",
   "keywords": [
     "github",
