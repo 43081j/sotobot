@@ -2,7 +2,7 @@ import { App } from '@octokit/app';
 import type { Octokit } from '@octokit/core';
 import { createWebMiddleware } from '@octokit/webhooks';
 import type {
-  EmitterWebhookEvent,
+  HandlerFunction,
   WebhookEventHandlerError,
 } from '@octokit/webhooks/types';
 import { parseCommand } from './comments.js';
@@ -11,10 +11,6 @@ import { hasWriteAccess } from './octokit.js';
 import { CommandHandler } from './commands.js';
 
 type WebhookMiddleware = (request: Request) => Promise<Response>;
-
-type IssueCommentEvent = EmitterWebhookEvent<'issue_comment.created'> & {
-  octokit: Octokit;
-};
 
 export interface BotOptions {
   name: string;
@@ -52,10 +48,12 @@ export class Bot {
     return this.#middleware(request);
   }
 
-  #onIssueComment = async ({
-    octokit,
-    payload,
-  }: IssueCommentEvent): Promise<void> => {
+  #onIssueComment: HandlerFunction<
+    'issue_comment.created',
+    {
+      octokit: Octokit;
+    }
+  > = async ({ octokit, payload }): Promise<void> => {
     if (!payload.issue.pull_request) {
       return;
     }
