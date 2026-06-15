@@ -8,20 +8,13 @@ import type {
 import { parseCommand } from './comments.js';
 import { WEBHOOK_PATH } from './constants.js';
 import { hasWriteAccess } from './octokit.js';
+import { CommandHandler } from './commands.js';
 
 type WebhookMiddleware = (request: Request) => Promise<Response>;
 
 type IssueCommentEvent = EmitterWebhookEvent<'issue_comment.created'> & {
   octokit: Octokit;
 };
-
-export interface CommandContext {
-  octokit: Octokit;
-  payload: IssueCommentEvent['payload'];
-  args: string[];
-}
-
-export type CommandHandler = (context: CommandContext) => Promise<void>;
 
 export interface BotOptions {
   name: string;
