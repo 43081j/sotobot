@@ -29,3 +29,5 @@ export function createBot(options: CreateBotOptions): Bot {
   botCache.set(options, bot);
   return bot;
 }
+
+export * from './commands.js';
