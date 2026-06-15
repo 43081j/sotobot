@@ -1,0 +1,66 @@
+{
+  "name": "sotobot",
+  "version": "0.2.0",
+  "description": "A serverless-focused GitHub bot framework.",
+  "keywords": [
+    "github",
+    "bot",
+    "probot",
+    "ci"
+  ],
+  "homepage": "https://github.com/43081j/sotobot#readme",
+  "bugs": {
+    "url": "https://github.com/43081j/sotobot/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/43081j/sotobot.git"
+  },
+  "license": "MIT",
+  "author": "James Garbutt (https://github.com/43081j)",
+  "type": "module",
+  "main": "lib/main.js",
+  "exports": {
+    ".": {
+      "types": "./lib/main.d.ts",
+      "default": "./lib/main.js"
+    },
+    "./cloudflare.js": {
+      "types": "./lib/cloudflare.d.ts",
+      "default": "./lib/cloudflare.js"
+    },
+    "./lib/cloudflare.js": {
+      "types": "./lib/cloudflare.d.ts",
+      "default": "./lib/cloudflare.js"
+    }
+  },
+  "files": [
+    "lib",
+    "!lib/**/*.test.js",
+    "!lib/**/*.test.d.ts"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build:clean": "node -e \"require('fs').rmSync('./lib', { recursive: true, force: true })\"",
+    "build": "npm run build:clean && tsgo",
+    "lint:js": "oxlint src",
+    "lint:format": "oxfmt --check src",
+    "lint": "npm run lint:js && npm run lint:format",
+    "format": "oxfmt --write src",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@typescript/native-preview": "^7.0.0-dev.20260615.1",
+    "@vitest/coverage-v8": "^4.1.9",
+    "oxfmt": "^0.54.0",
+    "oxlint": "^1.69.0",
+    "vitest": "^4.1.9"
+  },
+  "dependencies": {
+    "@octokit/app": "^16.1.2",
+    "@octokit/core": "^7.0.6",
+    "@octokit/webhooks": "^14.2.0"
+  }
+}
