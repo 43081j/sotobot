@@ -1,25 +1,13 @@
-import { App } from '@octokit/app';
-import { Bot, BotOptions } from './bot.js';
+import { Bot } from './bot.js';
+import { BotOptions } from './options.js';
+import { Driver } from './drivers/types.js';
 
-export interface CreateBotOptions {
-  privateKey: string;
-  appId: string;
-  webhookSecret: string;
-  bot: BotOptions;
-}
-
-export function createBot(options: CreateBotOptions): Bot {
-  const { privateKey, appId, webhookSecret } = options;
-  const app = new App({
-    appId,
-    privateKey,
-    webhooks: {
-      secret: webhookSecret,
-    },
-  });
-
-  const bot = new Bot(app, options.bot);
+export function createBot(options: BotOptions, driver: Driver): Bot {
+  const bot = new Bot(driver, options);
   return bot;
 }
 
+export { Bot, type BotCommandEventDetail, type BotEventMap } from './bot.js';
 export * from './commands.js';
+export * from './drivers/types.js';
+export * from './drivers/github.js';

@@ -1,14 +1,15 @@
-import { Octokit } from '@octokit/core';
-import { EmitterWebhookEvent } from '@octokit/webhooks/types';
-
-type IssueCommentEvent = EmitterWebhookEvent<'issue_comment.created'> & {
-  octokit: Octokit;
-};
+import type { Bot } from './bot.js';
 
 export interface CommandContext {
-  octokit: Octokit;
-  payload: IssueCommentEvent['payload'];
+  command: string;
+  raw: unknown;
   args: string[];
+  repo: string;
+  owner: string;
+  pullRequestNumber: number | undefined;
 }
 
-export type CommandHandler = (context: CommandContext) => Promise<void>;
+export type CommandHandler = (
+  bot: Bot,
+  context: CommandContext,
+) => Promise<void>;

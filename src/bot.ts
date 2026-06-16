@@ -1,92 +1,87 @@
-import { App } from '@octokit/app';
-import type { Octokit } from '@octokit/core';
-import { createWebMiddleware } from '@octokit/webhooks';
-import type {
-  HandlerFunction,
-  WebhookEventHandlerError,
-} from '@octokit/webhooks/types';
 import { parseCommand } from './comments.js';
-import { WEBHOOK_PATH } from './constants.js';
-import { hasWriteAccess } from './octokit.js';
-import { CommandHandler } from './commands.js';
+import { Driver, PRCommentCreatedEventDetail } from './drivers/types.js';
+import { BotOptions } from './options.js';
 
-type WebhookMiddleware = (request: Request) => Promise<Response>;
-
-export interface BotOptions {
-  name: string;
+export interface BotCommandEventDetail {
+  bot: Bot;
+  command: string;
+  args: string[];
+  repo: string;
+  owner: string;
+  pullRequestNumber: number;
+  source: PRCommentCreatedEventDetail<unknown>;
 }
 
-export class Bot {
-  readonly #app: App;
-  readonly #middleware: WebhookMiddleware;
-  readonly #commands = new Map<string, CommandHandler>();
+export interface BotEventMap {
+  botCommand: CustomEvent<BotCommandEventDetail>;
+}
+
+interface BotEventTarget extends EventTarget {
+  addEventListener<TEvent extends keyof BotEventMap>(
+    event: TEvent,
+    listener: (ev: BotEventMap[TEvent]) => void,
+  ): void;
+  addEventListener(
+    type: string,
+    callback: EventListenerOrEventListenerObject | null,
+    options?: AddEventListenerOptions | boolean,
+  ): void;
+}
+
+const eventTarget = EventTarget as {
+  new (): BotEventTarget;
+  prototype: BotEventTarget;
+};
+
+export class Bot extends eventTarget {
+  readonly #driver: Driver;
   readonly #options: BotOptions;
 
-  constructor(app: App, options: BotOptions) {
-    this.#options = options;
-    this.#app = app;
-
-    this.#app.webhooks.onError(this.#onError);
-    this.#app.webhooks.on('issue_comment.created', this.#onIssueComment);
-
-    this.#middleware = createWebMiddleware(this.#app.webhooks, {
-      path: WEBHOOK_PATH,
-    });
+  public get name(): string {
+    return this.#options.name;
   }
 
-  addCommand(name: string | string[], fn: CommandHandler): void {
-    if (Array.isArray(name)) {
-      for (const n of name) {
-        this.#commands.set(n, fn);
-      }
-    } else {
-      this.#commands.set(name, fn);
-    }
+  public get driver(): Driver {
+    return this.#driver;
+  }
+
+  constructor(driver: Driver, options: BotOptions) {
+    super();
+
+    this.#driver = driver;
+    this.#options = options;
+
+    this.#driver.addEventListener(
+      'pr.commentCreated',
+      this.#onPRCommentCreated,
+    );
   }
 
   handleRequest(request: Request): Promise<Response> {
-    return this.#middleware(request);
+    return this.#driver.handleRequest(request);
   }
 
-  #onIssueComment: HandlerFunction<
-    'issue_comment.created',
-    {
-      octokit: Octokit;
-    }
-  > = async ({ octokit, payload }): Promise<void> => {
-    if (!payload.issue.pull_request) {
-      return;
-    }
+  #onPRCommentCreated = async (
+    ev: CustomEvent<PRCommentCreatedEventDetail<unknown>>,
+  ): Promise<void> => {
+    const command = parseCommand(this.#options.name, ev.detail.body);
 
-    const command = parseCommand(this.#options.name, payload.comment.body);
     if (!command) {
       return;
     }
 
-    const handler = this.#commands.get(command.name);
-    if (!handler) {
-      return;
-    }
-
-    const username = payload.comment.user?.login;
-    if (!username) {
-      return;
-    }
-
-    const allowed = await hasWriteAccess(
-      octokit,
-      payload.repository.owner.login,
-      payload.repository.name,
-      username,
+    this.dispatchEvent(
+      new CustomEvent<BotCommandEventDetail>('botCommand', {
+        detail: {
+          bot: this,
+          command: command.name,
+          args: command.args,
+          repo: ev.detail.repository,
+          owner: ev.detail.owner,
+          pullRequestNumber: ev.detail.pullRequestNumber,
+          source: ev.detail,
+        },
+      }),
     );
-    if (!allowed) {
-      return;
-    }
-
-    await handler({ octokit, payload, args: command.args });
-  };
-
-  #onError = (error: WebhookEventHandlerError): void => {
-    console.error('Webhook handler error', error);
   };
 }
