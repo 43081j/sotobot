@@ -1,12 +1,6 @@
 import { Bot } from './bot.js';
 import { WEBHOOK_PATH } from './constants.js';
 
-export interface ServerOptions {
-  privateKey: string;
-  appId: string;
-  webhookSecret: string;
-}
-
 type BotFactory = () => Promise<Bot>;
 const botCache = new WeakMap<BotFactory, Bot>();
 
