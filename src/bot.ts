@@ -9,7 +9,7 @@ export interface BotCommandEventDetail {
   repo: string;
   owner: string;
   pullRequestNumber: number;
-  source: PRCommentCreatedEventDetail<unknown>;
+  source: unknown;
 }
 
 export interface BotEventMap {
@@ -79,7 +79,7 @@ export class Bot extends eventTarget {
           repo: ev.detail.repository,
           owner: ev.detail.owner,
           pullRequestNumber: ev.detail.pullRequestNumber,
-          source: ev.detail,
+          source: ev.detail.raw,
         },
       }),
     );

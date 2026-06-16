@@ -14,23 +14,32 @@ npm install sotobot
 ## Usage
 
 ```ts
-import { createBot } from 'sotobot';
+import { createBot, GitHubDriver } from 'sotobot';
 import { createServer } from 'sotobot/cloudflare.js';
 
-const bot = createBot({
+const driver = new GitHubDriver({
   appId: env.APP_ID,
   privateKey: env.PRIVATE_KEY,
   webhookSecret: env.WEBHOOK_SECRET,
-  bot: { name: 'soto' },
 });
 
-bot.addCommand('ping', async ({ octokit, payload }) => {
+const bot = createBot({ name: 'soto' }, driver);
+
+bot.addEventListener('botCommand', async (event) => {
+  const { command, args, owner, repo, pullRequestNumber, source } =
+    event.detail;
+
+  if (command !== 'ping') {
+    return;
+  }
+
+  const { octokit } = source;
   await octokit.request(
     'POST /repos/{owner}/{repo}/issues/{issue_number}/comments',
     {
-      owner: payload.repository.owner.login,
-      repo: payload.repository.name,
-      issue_number: payload.issue.number,
+      owner,
+      repo,
+      issue_number: pullRequestNumber,
       body: 'pong 🏓',
     },
   );
