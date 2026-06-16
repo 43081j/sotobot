@@ -31,12 +31,6 @@ export interface GitHubDriverEventMap {
   >;
 }
 
-declare global {
-  interface GlobalSotoDriverEventMap {
-    github: GitHubDriverEventMap;
-  }
-}
-
 export class GitHubDriver extends EventTarget implements Driver {
   readonly #app: App;
   readonly #middleware: (request: Request) => Promise<Response>;
